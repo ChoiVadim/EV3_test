@@ -12,7 +12,7 @@ from ev3dev2.sound import Sound
 
 
 # Define motor speeds
-motor_speed = 10
+motor_speed = 20
 running = True
 
 # Initialize motor states
@@ -71,8 +71,8 @@ def main():
     global running
 
     # Play the sound
-    sound = Sound()
-    sound.speak('Welcome to the E V 3 dev project!')
+    # sound = Sound()
+    # sound.speak('Welcome to the E V 3 dev project!')
     print("Press ESC key to stop the program.")
 
     # Start the motor thread
