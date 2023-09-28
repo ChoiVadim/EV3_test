@@ -8,6 +8,7 @@ HOST = 'C0:3C:59:D8:CE:8E'
 # The port used by the server
 PORT = 5
 
+# Define motor speeds
 ARM_SPEED = 10
 WHEELS_SPEED = 20
 
