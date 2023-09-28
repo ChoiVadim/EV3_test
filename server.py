@@ -1,38 +1,101 @@
 import socket 
 import keyboard
 
-# hcitool dev | cut -sf3
-# HOST = '00:17:E9:F9:07:CC'
+# The MAC address of a Bluetooth adapter on the server
 HOST = 'C0:3C:59:D8:CE:8E'
+# The port used by the server
 PORT = 5
 
-server = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-server.bind((HOST, PORT))
+def main():
+    # Create the server socket
+    server = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+    server.bind((HOST, PORT))
+    server.listen(2)
 
-server.listen(2)
+    # Accept connections from the first client
+    robot_arm_socket, address = server.accept()
+    print('Connected by ', address)
+    message = robot_arm_socket.recv(1024).decode("utf-8")
+    print('Received message: ', message)
 
-robot_arm_socket, address = server.accept()
-print('Connected by ', address)
-message = robot_arm_socket.recv(1024).decode("utf-8")
-print('Received message: ', message)
+    # Accept connections from the second client
+    wheels_socket, address2 = server.accept()
+    print('Connected by ', address2)
+    message = wheels_socket.recv(1024).decode("utf-8")
+    print('Received message: ', message)
 
-wheels_socket, address2 = server.accept()
-print('Connected by ', address2)
-message = wheels_socket.recv(1024).decode("utf-8")
-print('Received message: ', message)
+    # Send commands to the client
+    while True:
+        event = keyboard.read_event()
 
-while True:
-    event = keyboard.read_event()
-    if event.event_type == keyboard.KEY_DOWN:
-        if event.name == 'space':
-            print('You pressed space!')
-            robot_arm_socket.send("Run".encode("utf-8"))
-    if event.event_type == keyboard.KEY_UP:
-        if event.name == 'space':
-            wheels_socket.send("Run".encode("utf-8"))
-    if event.event_type == keyboard.KEY_DOWN and event.name == "esc":
-        break
-robot_arm_socket.close()
-wheels_socket.close()
+        # Key press event
+        if event.event_type == keyboard.KEY_DOWN:
 
-    
+            # Wheels
+            if event.name == 'W':
+                wheels_socket.send("W".encode("ASCII"))
+            if event.name == 'S':
+                wheels_socket.send("S".encode("ASCII"))
+            if event.name == 'A':
+                wheels_socket.send("A".encode("ASCII"))
+            if event.name == 'D':
+                wheels_socket.send("D".encode("ASCII"))
+
+            # Robot arm
+            if event.name == 'Q':
+                robot_arm_socket.send("Q".encode("ASCII"))
+            if event.name == 'E':
+                robot_arm_socket.send("E".encode("ASCII"))
+            if event.name == 'R':
+                robot_arm_socket.send("R".encode("ASCII"))
+            if event.name == 'F':
+                robot_arm_socket.send("F".encode("ASCII"))
+            if event.name == 'T':
+                robot_arm_socket.send("T".encode("ASCII"))
+            if event.name == 'G':
+                robot_arm_socket.send("G".encode("ASCII"))
+            
+            # Speed up for wheels
+            if event.name == 'up':
+                wheels_socket.send("SU".encode("ASCII"))
+            if event.name == 'down':
+                wheels_socket.send("SD".encode("ASCII"))
+
+            # Speed up for robot arm
+            if event.name == 'right':
+                robot_arm_socket.send("SU".encode("ASCII"))
+            if event.name == 'left':
+                robot_arm_socket.send("SD".encode("ASCII"))
+
+            # Beep
+            if event.name == 'space':
+                robot_arm_socket.send("BEEP".encode("ASCII"))
+                wheels_socket.send("BEEP".encode("ASCII"))
+
+            # Exit
+            if event.name == 'esc':
+                robot_arm_socket.send("Exit".encode("ASCII"))
+                wheels_socket.send("Exit".encode("ASCII"))
+                break
+
+        # Key release event
+        if event.event_type == keyboard.KEY_UP:
+            if event.name == 'W' or event.name == 'S':
+                wheels_socket.send("WSS".encode("ASCII"))
+            if event.name == 'A' or event.name == 'D':
+                wheels_socket.send("ADS".encode("ASCII"))
+
+            if event.name == 'Q' or event.name == 'E':
+                robot_arm_socket.send("QES".encode("ASCII"))
+            if event.name == 'R' or event.name == 'F':
+                robot_arm_socket.send("RFS".encode("ASCII"))
+            if event.name == 'T' or event.name == 'G':
+                robot_arm_socket.send("TGS".encode("ASCII"))
+
+    # Close the client socket
+    robot_arm_socket.close()
+    wheels_socket.close()
+
+
+if __name__ == '__main__':
+    main()

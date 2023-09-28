@@ -7,7 +7,7 @@ from evdev import ecodes as e
 import threading
 
 from ev3dev2.motor import LargeMotor, MediumMotor 
-from ev3dev2.motor import OUTPUT_A, OUTPUT_B, OUTPUT_C, OUTPUT_D
+from ev3dev2.motor import OUTPUT_A, OUTPUT_B, OUTPUT_C
 from ev3dev2.sound import Sound
 
 
@@ -19,7 +19,6 @@ running = True
 elbow_motor_state = 0
 base_motor_state = 0
 gripper_motor_state = 0
-belt_motor_state = 0
 
 # Initialize motor objects
 class MotorThread(threading.Thread):
@@ -27,7 +26,6 @@ class MotorThread(threading.Thread):
         self.base_motor = LargeMotor(OUTPUT_A)
         self.elbow_motor = LargeMotor(OUTPUT_B)
         self.gripper_motor = MediumMotor(OUTPUT_C)
-        self.belt_motor = LargeMotor(OUTPUT_D)
         threading.Thread.__init__(self)
 
     def run(self):
@@ -40,7 +38,6 @@ class MotorThread(threading.Thread):
             self.elbow_motor.stop()
             self.base_motor.stop()
             self.gripper_motor.stop()
-            self.belt_motor.stop()
             print("Motors stopped.")
 
         except Exception as e:
