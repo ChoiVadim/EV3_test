@@ -1,12 +1,20 @@
 import socket 
 import keyboard
+from time import sleep
+
 
 # The MAC address of a Bluetooth adapter on the server
 HOST = 'C0:3C:59:D8:CE:8E'
 # The port used by the server
 PORT = 5
 
+ARM_SPEED = 10
+WHEELS_SPEED = 20
+
 def main():
+    global ARM_SPEED
+    global WHEELS_SPEED
+
     # Create the server socket
     server = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
     server.bind((HOST, PORT))
@@ -57,15 +65,27 @@ def main():
             
             # Speed up for wheels
             if event.name == 'up':
-                wheels_socket.send("SU".encode("ASCII"))
+                if WHEELS_SPEED < 100:
+                    WHEELS_SPEED += 10
+                    print("Wheels speed: ", WHEELS_SPEED)
+                    wheels_socket.send("SU".encode("ASCII"))
             if event.name == 'down':
-                wheels_socket.send("SD".encode("ASCII"))
+                if WHEELS_SPEED > 10:
+                    WHEELS_SPEED -= 10
+                    print("Wheels speed: ", WHEELS_SPEED)
+                    wheels_socket.send("SD".encode("ASCII"))
 
             # Speed up for robot arm
             if event.name == 'right':
-                robot_arm_socket.send("SU".encode("ASCII"))
+                if ARM_SPEED < 100:
+                    ARM_SPEED += 5
+                    print("Arm speed: ", ARM_SPEED)
+                    robot_arm_socket.send("SU".encode("ASCII"))
             if event.name == 'left':
-                robot_arm_socket.send("SD".encode("ASCII"))
+                if ARM_SPEED > 5:
+                    ARM_SPEED -= 5
+                    print("Arm speed: ", ARM_SPEED)
+                    robot_arm_socket.send("SD".encode("ASCII"))
 
             # Beep
             if event.name == 'space':
@@ -95,6 +115,7 @@ def main():
     # Close the client socket
     robot_arm_socket.close()
     wheels_socket.close()
+    sleep(1)
 
 
 if __name__ == '__main__':

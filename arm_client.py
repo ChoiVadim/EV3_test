@@ -115,12 +115,12 @@ def main():
         # Stop the program
         if message == "Exit":
             running = False
-            time.sleep(1)
+            sleep(1)
             break
 
     # Close the client socket 
     client.close()
-    time.sleep(1)
+    sleep(1)
 
     
 if __name__ == '__main__':

@@ -35,8 +35,8 @@ class MotorThread(threading.Thread):
                 self.left_motor.on(speed=motor_speed*left_motor_state)
                 self.right_motor.on(speed=motor_speed*right_motor_state)
             # Stop the motors
-            self.elbow_motor.stop()
-            self.base_motor.stop()
+            self.left_motor.stop()
+            self.right_motor.stop()
 
         except Exception as e:
             print("An error occurred:", str(e))
@@ -72,16 +72,16 @@ def main():
         # Move the robot
         if message == "W":
             right_motor_state = 1
-            left_motor._state = 1
+            left_motor_state = 1
         if message == "S":
-            right_motor_state = 1
+            right_motor_state = -1
             left_motor_state = -1
         if message == "A":
-            right_motor_state = 1
-            left_motor_state = -1
-        if message == "D":
             right_motor_state = -1
             left_motor_state = 1
+        if message == "D":
+            right_motor_state = 1
+            left_motor_state = -1
 
         # Stop the robot when the key is released
         if message == "WSS":
@@ -106,12 +106,12 @@ def main():
         # Stop the program
         if message == "Exit":
             running = False
-            time.sleep(1)
+            sleep(1)
             break
 
     # Close the client socket 
     client.close()
-    time.sleep(1)
+    sleep(1)
 
     
 if __name__ == '__main__':
