@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import socket 
 from time import sleep
 import threading
@@ -13,7 +14,7 @@ HOST = 'C0:3C:59:D8:CE:8E'
 PORT = 5
 
 # Define motor speeds
-motor_speed = 60
+motor_speed = 20
 running = True
 
 # Initialize motor states
@@ -67,31 +68,38 @@ def main():
 
     while True:
         # Receive message from the server
-        message = client.recv(1024).decode("ASCII")
-        
+        message = client.recv(20).decode("ASCII")
+
         # Move the robot
-        if message[1] == '1':
+        if message == '01000': # Forward
             right_motor_state = 1
             left_motor_state = 1
-        if message[2] == '1' and message[1] == '1':
+        if message == '01100': # Backward
             right_motor_state = -1
             left_motor_state = -1
-        if message[0] == '1':
+        if message == '10000': # Turn left
             right_motor_state = -1
             left_motor_state = 1
-        if message[4] == '1':
+        if message == '00001': # Turn right
             right_motor_state = 1
             left_motor_state = -1
 
-        if message[3] == '1':
-            running = False
-            sleep(1)
-            break
-        # Stop the robot
-        if message[1] == '0' and message[2] == '0' and message[0] == '0' and message[4] == '0':
+        # Stop motors
+        if message=='11111':
             right_motor_state = 0
             left_motor_state = 0
 
+        # Change motor speed
+        if message == '00111':
+            motor_speed = 100
+        if message == '10001':
+            motor_speed = 10
+
+        # Stop the program
+        if message[3] == '11001':
+            running = False
+            sleep(1)
+            break
         
     # Close the client socket 
     client.close()

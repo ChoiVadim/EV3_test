@@ -14,7 +14,7 @@ HOST = 'C0:3C:59:D8:CE:8E'
 PORT = 5
 
 # Define motor speeds
-motor_speed = 10
+motor_speed = 20
 running = True
 
 # Initialize motor states
@@ -25,7 +25,6 @@ gripper_motor_state = 0
 # Initialize motor objects
 class MotorThread(threading.Thread):
     def __init__(self):
-        # Initialize the motors
         self.base_motor = LargeMotor(OUTPUT_A)
         self.elbow_motor = LargeMotor(OUTPUT_B)
         self.gripper_motor = MediumMotor(OUTPUT_C)
@@ -34,14 +33,13 @@ class MotorThread(threading.Thread):
     def run(self):
         try:
             while running:
-                # Run the motors
                 self.elbow_motor.on(speed=motor_speed*elbow_motor_state)
                 self.base_motor.on(speed=motor_speed*base_motor_state)
                 self.gripper_motor.on(speed=motor_speed*gripper_motor_state)
-            # Stop the motors
             self.elbow_motor.stop()
             self.base_motor.stop()
             self.gripper_motor.stop()
+            print("Motors stopped.")
 
         except Exception as e:
             print("An error occurred:", str(e))
@@ -52,6 +50,7 @@ def main():
     global elbow_motor_state
     global base_motor_state
     global gripper_motor_state
+
     global motor_speed
     global running
 
@@ -75,49 +74,26 @@ def main():
         # Receive the message from the server
         message = client.recv(1024).decode("ASCII")
 
-        # Move the base motor
-        if message == "Q":
+        # Move the robot
+        if message == '01000': # Forward
+            elbow_motor_state = 1
+        if message == '01100': # Backward
+            elbow_motor_state = -1
+        if message == '10000': # Turn left
             base_motor_state = -1
-        if message == "E":
+        if message == '10001': # Turn right
             base_motor_state = 1
 
-        # Move the elbow motor
-        if message == "R":
-            elbow_motor_state = -1
-        if message == "F":
-            elbow_motor_state = 1
-
-        # Move the gripper motor
-        if message == "T":
-            gripper_motor_state = -1
-        if message == "G":
+        if message == '11001': # Open gripper
             gripper_motor_state = 1
+        if message == '00000': # Close gripper
+            gripper_motor_state = -1
 
-        # Stop the motors when the key is released
-        if message == "QES":
-            base_motor_state = 0
-        if message == "RFS":
+        # Stop motors
+        if message=='11111':
             elbow_motor_state = 0
-        if message == "TGS":
+            base_motor_state = 0
             gripper_motor_state = 0
-
-        # Speed up and down
-        if message == "SU":
-            if motor_speed < 100:
-                motor_speed += 5
-        if message == "SD":
-            if motor_speed > 5:
-                motor_speed -= 5
-
-        # Beep
-        if message == "BEEP":
-            sound.beep()
-
-        # Stop the program
-        if message == "Exit":
-            running = False
-            sleep(1)
-            break
 
     # Close the client socket 
     client.close()
