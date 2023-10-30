@@ -9,9 +9,14 @@ from ev3dev2.motor import OUTPUT_A, OUTPUT_B
 from ev3dev2.sound import Sound
 
 
-# Server MAC address
+# The MAC address of a Bluetooth adapter on the server
 HOST = 'C0:3C:59:D8:CE:8E'
-PORT = 5
+# The port used by the server
+PORT = 6
+# The size of the header
+HEADER_SIZE = 64
+# The format of the message
+FORMAT = "ASCII"
 
 # Define motor speeds
 motor_speed = 20
@@ -40,6 +45,8 @@ class MotorThread(threading.Thread):
             self.right_motor.stop()
 
         except Exception as e:
+            self.left_motor.stop()
+            self.right_motor.stop()
             print("An error occurred:", str(e))
 
 
@@ -60,48 +67,54 @@ def main():
     client.connect((HOST, PORT))
 
     # Send message to the server
-    client.send("Wheels ready!".encode("ASCII"))
+    client.send("Wheels ready!".encode(FORMAT))
 
     # Play the sound
     sound = Sound()
     sound.speak('Wheels ready!')
 
     while True:
-        # Receive message from the server
-        message = client.recv(20).decode("ASCII")
+        try:
+            # Receive message from the server
+            message = client.recv(HEADER_SIZE).decode(FORMAT)
 
-        # Move the robot
-        if message == '01000': # Forward
-            right_motor_state = 1
-            left_motor_state = 1
-        if message == '01100': # Backward
-            right_motor_state = -1
-            left_motor_state = -1
-        if message == '10000': # Turn left
-            right_motor_state = -1
-            left_motor_state = 1
-        if message == '00001': # Turn right
-            right_motor_state = 1
-            left_motor_state = -1
+            # Move the robot
+            if message == '01000': # Forward
+                right_motor_state = 1
+                left_motor_state = 1
+            if message == '01100': # Backward
+                right_motor_state = -1
+                left_motor_state = -1
+            if message == '10000': # Turn left
+                right_motor_state = -1
+                left_motor_state = 1
+            if message == '00001': # Turn right
+                right_motor_state = 1
+                left_motor_state = -1
 
-        # Stop motors
-        if message=='11111':
-            right_motor_state = 0
-            left_motor_state = 0
+            # Stop motors
+            if message=='11111':
+                right_motor_state = 0
+                left_motor_state = 0
 
-        # Change motor speed
-        if message == '00111':
-            motor_speed = 100
-        if message == '10001':
-            motor_speed = 10
+            # Change motor speed
+            if message == '00111':
+                motor_speed = 100
+            if message == '10001':
+                motor_speed = 10
 
-        # Stop the program
-        if message[3] == '11001':
+            # Stop the program
+            if message[3] == '11001':
+                running = False
+                sleep(1)
+                break
+        except Exception as e:
             running = False
-            sleep(1)
+            print("An error occurred:", str(e))
             break
         
     # Close the client socket 
+    print("Closing connection...")
     client.close()
     sleep(1)
 
