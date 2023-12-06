@@ -7,6 +7,8 @@ from time import sleep
 from ev3dev2.sound import Sound
 from ev3dev2.motor import (MediumMotor, LargeMotor,
                             OUTPUT_A, OUTPUT_B, OUTPUT_C)
+from ev3dev2.sensor.lego import UltrasonicSensor
+from ev3dev2.sensor import INPUT_1
 
 
 # The MAC address of a Bluetooth adapter on the server
@@ -23,9 +25,9 @@ base_pos = 0
 elbow_pos = 0
 gripper_pos = ''
 running = True
-motor_speed = 10
+motor_speed = 15
 # The difference between the current and desired position
-diff_between_pos = 20 
+diff_between_pos = 5
 
 
 class MotorThread(threading.Thread):
@@ -81,14 +83,20 @@ class MotorThread(threading.Thread):
                     self.elbow_motor.stop()
 
                 # Gripper motor
-                if gripper_pos == '00000':
-                    self.gripper_motor.on(speed=20) # Close
-                    if current_g_pos > 40:
+                if gripper_pos == '00000': # Close
+                    self.gripper_motor.on(speed=-12) # Close 124 -speed cloclwise
+                    if current_g_pos < 0:
                         self.gripper_motor.stop()
-                if gripper_pos == '11111':
-                    self.gripper_motor.on(speed=-20) # Open
-                    if current_g_pos <= 0:
+                elif gripper_pos == '11111': # Open
+                    self.gripper_motor.on(speed=12) # Open -61
+                    if current_g_pos > 45:
                         self.gripper_motor.stop()
+                elif gripper_pos == '11001' and current_b_pos < -150: # Throw
+                    self.gripper_motor.on(speed=70)
+                    if current_g_pos > 35:
+                        self.gripper_motor.stop()
+                else:
+                    self.gripper_motor.stop()
                 
             # if running is False stop all motors and reset them
             self.stop()
@@ -107,6 +115,8 @@ def main():
     global motor_speed
     global running
     global diff_between_pos
+    
+    us = UltrasonicSensor(INPUT_1)
         
     # Create the client socket and connect to the server
     client = socket.socket(socket.AF_BLUETOOTH,
@@ -123,13 +133,16 @@ def main():
 
     # Play the sound
     sound = Sound()
-    sound.speak('Wheels ready!')
-
+    sound.speak('Arm ready!')
+    
     # Main loop receiving messages from the server and changing the motor positions
     while True:
         try:
             # Receive message from the server
             msg_length = client.recv(HEADER_SIZE).decode(FORMAT)
+            distance = us.distance_centimeters
+            client.send(str(round(distance, 1)).encode(FORMAT))
+
 
             # If the message is not empty, decode it
             if msg_length:
@@ -137,7 +150,6 @@ def main():
                 msg_length = int(msg_length)
                 # Get the message with the given length
                 msg = client.recv(msg_length).decode(FORMAT)
-                print(msg)
 
                 # Split the message into the base, elbow and gripper positions
                 msg = msg.split(" ")
@@ -145,16 +157,26 @@ def main():
                 elbow_pos = int(msg[2])
                 gripper_pos = msg[0]
 
-                # Change the motor speed
+                # Throw the ball
                 if msg[0] == '11001':
-                    motor_speed = 60
-                    diff_between_pos = 40
-                if msg[0] == '10001':
-                    motor_speed = 10
+                    motor_speed = 100
+                    base_pos = -300
+                    gripper_pos = '11001'
+                else:
+                    motor_speed = 15
+                # # Change the motor speed
+                # if msg[0] == '11001':
+                #     motor_speed = 50
+                #     diff_between_pos = 40
+                # if msg[0] == '10001':
+                #     motor_speed = 20
+                #     diff_between_pos = 10
+                
 
 
         except Exception as e:
             # If an error occurs, stop the motor thread and close the client socket
+            print("An error occurred:", str(e))
             running = False
             client.close()
             break

@@ -19,7 +19,7 @@ HEADER_SIZE = 64
 FORMAT = "ASCII"
 
 # Define motor speeds
-motor_speed = 20
+motor_speed = 40
 running = True
 
 # Initialize motor states
@@ -80,15 +80,15 @@ def main():
 
             # Move the robot
             if message == '01000': # Forward
-                right_motor_state = 1
-                left_motor_state = 1
-            if message == '01100': # Backward
                 right_motor_state = -1
                 left_motor_state = -1
-            if message == '10000': # Turn left
+            if message == '01100': # Backward
+                right_motor_state = 1
+                left_motor_state = 1
+            if message == '10001': # Turn left
                 right_motor_state = -1
                 left_motor_state = 1
-            if message == '00001': # Turn right
+            if message == '10000': # Turn right
                 right_motor_state = 1
                 left_motor_state = -1
 
@@ -98,16 +98,17 @@ def main():
                 left_motor_state = 0
 
             # Change motor speed
-            if message == '00111':
-                motor_speed = 100
-            if message == '10001':
+            if message == '11000':
                 motor_speed = 10
+            if message == '11100':
+                motor_speed = 40
 
-            # Stop the program
-            if message[3] == '11001':
-                running = False
-                sleep(1)
-                break
+            if message == '11001':
+                motor_speed = 100
+                right_motor_state = -1
+                left_motor_state = 1 
+                
+
         except Exception as e:
             running = False
             print("An error occurred:", str(e))
